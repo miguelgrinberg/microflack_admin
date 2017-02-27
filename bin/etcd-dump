@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# This script dumps the entire contents of the etcd store to the console
+docker run --rm mkoppanen/etcdtool -p $ETCD export -f yaml /

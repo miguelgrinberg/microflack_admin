@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This script generates a .env file that is suitable to use with a service
+# under development.
+# Warning: this script exposes secrets, so use only in development
+# environments!
+
+echo "ETCD=\"http://$MICROFLACK_IP:2379\""
+echo "REDIS=\"$MICROFLACK_IP:6379\""
+echo "LB=\"http://$MICROFLACK_IP\""
+echo "SECRET_KEY=\"$SECRET_KEY\""
+echo "JWT_SECRET_KEY=\"$JWT_SECRET_KEY\""
+
+source ~/.mysql_passwords
+for SERVICE in $SERVICES_WITH_DB; do
+    VAR=$(echo ${SERVICE}_DB_PASSWORD | tr '/a-z/' '/A-Z/')
+    PASSWORD=$(eval echo \$$VAR)
+    echo ""
+    echo "# uncomment to connect to the $SERVICE database"
+    echo "# DATABASE_URL=\"mysql+pymysql://$SERVICE:$PASSWORD@$MICROFLACK_IP:3306/$SERVICE\""
+done

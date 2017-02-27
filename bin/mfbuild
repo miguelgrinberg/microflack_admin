@@ -1,0 +1,34 @@
+#!/bin/bash -e
+
+# This script builds Docker containers for the services.
+
+SERVICE=$1
+if [[ "$SERVICE" == "" ]]; then
+    echo "Usage: mfbuild <service-name>|all"
+    exit 1
+fi
+
+DIR="$(dirname "${BASH_SOURCE[0]}")"/..
+pushd $DIR
+
+# build wheels
+mkdir -p $WHEELHOUSE
+for PACKAGE in $PACKAGES; do
+    pushd ../microflack_$PACKAGE
+    if [[ ! -f venv ]]; then
+        python3 -m venv venv
+        venv/bin/pip install --upgrade pip
+        venv/bin/pip install wheel
+    fi
+    ./mkwheel all
+    popd
+done
+
+# build docker images
+for SVC in $SERVICES; do
+    if [[ "$SERVICE" == "$SVC" ]] || [[ "$SERVICE" == "all" ]]; then
+        ../microflack_$SVC/build.sh
+    fi
+done
+
+popd

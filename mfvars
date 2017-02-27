@@ -1,0 +1,25 @@
+# This script defines a few environment variables used by the application.
+
+DIR="$(dirname "${BASH_SOURCE[0]:-$0}")"
+
+# location where package wheels are stored
+export WHEELHOUSE=$(cd $DIR/..; pwd)/wheels
+export PIP_FIND_LINKS=$WHEELHOUSE
+
+# Python packages that need to be built
+export PACKAGES="common"
+
+# microservices in this application
+export SERVICES="ui users tokens messages"
+
+# services that use a database
+export SERVICES_WITH_DB="users messages"
+
+# let Flask know where the app is
+export FLASK_APP=app.py
+
+# main IP address to access the application
+# note that this is hardcoded to the Vagrant VM's IP address, so it needs to
+# be adjusted accordingly for other environments
+# if you have multiple IP addresses, just set one of them here
+export MICROFLACK_IP=192.168.33.10

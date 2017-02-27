@@ -1,0 +1,20 @@
+#!/bin/bash
+
+SERVICE=$1
+if [[ "$SERVICE" == "" ]]; then
+    echo "Usage: kill.sh <service>|all"
+    exit 1
+fi
+
+if [[ "$SERVICE" == "all" ]]; then
+    echo Killing all services...
+    docker rm -f $(docker ps -q -f label=app=microflack)
+
+    # cleanup the service registry as well
+    for SERVICE in $SERVICES; do
+        curl -X DELETE $ETCD/v2/keys/services/$SERVICE?recursive=true >/dev/null 2>&1
+    done
+else
+    echo Killing $SERVICE...
+    docker rm -f $(docker ps -q -f label=service=$SERVICE)
+fi

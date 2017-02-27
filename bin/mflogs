@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This script displays the consolidated logging stream in real time.
+# The "less" utility is used to tail the log stream. You can press Ctrl-C to
+# stop tailing and move left and right to see long lines, then Shift-F to
+# resume tailing. Press Ctrl-C and then Q to quit.
+
+if [[ "$MICROFLACK_IP" == "" ]]; then
+    echo Variable MICROFLACK_IP is undefined.
+    exit 1
+fi
+
+curl -s -N "http://$MICROFLACK_IP:1095/logs" | less +F -R -S

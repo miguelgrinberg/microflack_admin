@@ -1,0 +1,22 @@
+#!/bin/bash -e
+
+# This script clones all the microflack microservices
+
+GITROOT="https://github.com/miguelgrinberg"
+DIR="$(dirname "${BASH_SOURCE[0]}")"/..
+CLONEDIR=$1
+if [[ "$CLONEDIR" == "" ]]; then
+    echo "Usage: mfclone <dest-dir>"
+    exit 1
+fi
+
+source $DIR/mfvars
+
+# clone all repositories
+pushd $CLONEDIR
+for PROJECT in $PACKAGES $SERVICES; do
+    if [[ ! -d microflack_$PROJECT ]]; then
+        git clone ${GITROOT}/microflack_$PROJECT
+    fi
+done
+popd

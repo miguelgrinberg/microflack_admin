@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# This script registers a development service running in the host computer
+# with a load balancer running inside a Vagrant all-in-one installation.
+# Note that on Windows this script must be used from Cygwin or the Ubuntu
+# subsystem.
+
+# These are hardcoded values for a VM created from the included Vagrantfile and
+# setup-all-in-one.sh script.
+
+if [[ "$MICROFLACK_IP" == "" ]]; then
+    echo Variable MICROFLACK_IP is undefined.
+    exit 1
+fi
+
+ETCD=http://$MICROFLACK_IP:2379
+LB=http://$MICROFLACK_IP
+HOST=10.0.2.2  # inside a Vagrant VM, the 10.0.2.2 IP address is the host
+
+usage() {
+    echo "mfdev start|stop <service-name> [<port> [<path>]]"
+    echo "<port> defaults to 5000"
+    echo "<path> defaults to /api/<service-name>"
+    exit 1
+}
+
+CMD=$1
+SERVICE=$2
+PORT=$3
+SERVICE_PATH=$4
+
+if [[ "$CMD" != "start" ]] && [[ "$CMD" != "stop" ]]; then
+    usage
+fi
+if [[ "$SERVICE" == "" ]]; then
+    usage
+fi
+if [[ "$PORT" == "" ]]; then
+    PORT=5000
+fi
+
+if [[ "$CMD" == "start" ]]; then
+    # register the local service with maximum weight so that it gets most of the traffic
+    curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/upstream/dev -d value="$HOST:$PORT weight 256" >/dev/null 2>&1
+    if [[ "$?" == "0" ]] && [[ "$SERVICE_PATH" != "" ]]; then
+        curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/location -d value="$SERVICE_PATH" >/dev/null 2>&1
+    fi
+else
+    # remove the local service registration
+    curl -f -L -X DELETE $ETCD/v2/keys/services/$SERVICE/upstream/dev >/dev/null 2>&1
+fi
+if [[ "$?" == "0" ]]; then
+    echo OK
+    if [[ "$CMD" == "start" ]]; then
+        echo "Remember to set the proper environment variables in your service (LB, ETCD, JWT_SECRET_KEY at least), and then start it on port $PORT."
+    fi
+else
+    echo ERROR
+fi

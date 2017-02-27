@@ -1,0 +1,105 @@
+#!/bin/bash -e
+
+# This script initiates a microservice upgrade. It simply starts a container
+# with the new version of the service, which will join the load balancer and
+# start receiving actual traffic. It then shows its logs in real time, which
+# can be monitored to determine if the new service is working correctly.
+
+usage() {
+    echo "Usage: mfupgrade try <service>"
+    echo "       mfupgrade roll [<service>]"
+    echo "       mfupgrade abort"
+    exit 1
+}
+
+CMD=$1
+SERVICE=$2
+if [[ "$CMD" == "" ]]; then
+    usage
+elif [[ "$CMD" == "try" ]] && [[ "$SERVICE" == "" ]]; then
+    usage
+elif [[ "$CMD" != "try" ]] && [[ "$CMD" != "roll" ]] && [[ "$CMD" != "abort" ]]; then
+    usage
+fi
+
+if [[ "$CMD" == "try" ]]; then
+    # make sure we don't have another upgrade in progress
+    if [[ -f "~/.upgrade_state" ]]; then
+        echo "A previous upgrade hasn't been completed or aborted."
+        exit 1
+    fi
+
+    # get a list of all the containers running the service
+    OLD=$(docker ps -f label=service=$SERVICE -f status=running -q)
+    OLD=$(echo $OLD)
+
+    # start a single instance of the upgraded service
+    NEW=$(mfrun $SERVICE)
+
+    # save all the container IDs
+    cat >> ~/.upgrade_state <<EOF
+export SERVICE="$SERVICE"
+export OLD="$OLD"
+export NEW="$NEW"
+EOF
+
+    # dump logs of the new container
+    docker logs -f $NEW
+
+elif [[ "$CMD" == "roll" ]]; then
+    if [[ ! -f ~/.upgrade_state ]]; then
+        # do a full rolling upgrade
+        if [[ "$SERVICE" == "" ]]; then
+            usage
+        else
+            OLD=$(docker ps -f label=service=$SERVICE -f status=running -q)
+            NEW=
+        fi
+    else
+        # complete a rolling upgrade started with a try
+        source ~/.upgrade_state
+        rm ~/.upgrade_state
+    fi
+
+    TOTAL=$(wc -w <<< "$OLD")
+    INDEX=1
+
+    # perform a rolling upgrade, so that there is no down time
+    for OLD_CONTAINER in $OLD; do
+        # start a new container except on the first iteration, since we have one
+        # already started by the begin_upgrade.sh script
+        if [[ "$NEW" == "" ]]; then
+            mfrun $SERVICE > /dev/null
+
+            # give the container time to start up
+            sleep 15
+        else
+            unset NEW
+        fi
+
+        # stCMD and remove one of the old containers
+        echo "Recycling $OLD_CONTAINER ($INDEX/$TOTAL)..."
+        docker stop $OLD_CONTAINER > /dev/null
+        docker rm $OLD_CONTAINER > /dev/null || true
+
+        INDEX=$((INDEX + 1))
+    done
+
+    echo Upgrade for $SERVICE completed!
+
+elif [[ "$CMD" == "abort" ]]; then
+    # make sure an upgrade was already started
+    if [[ ! -f ~/.upgrade_state ]]; then
+        echo "Upgrade state file could not be found."
+        exit 1
+    fi
+    source ~/.upgrade_state
+
+    # to abort an upgrade, delete the "new" container
+    docker rm -f $NEW > /dev/null
+
+    # remove upgrade state file
+    rm ~/.upgrade_state
+
+    echo Upgrade for $SERVICE aborted.
+fi
