@@ -66,8 +66,15 @@ done
 
 if [[ "$SERVICE" == "ui" ]]; then
     SERVICE_URL="/"
+    SOCKETIO=""
 else
-    SERVICE_URL="/api/$SERVICE"
+    if [[ "$SERVICE" == "socketio" ]]; then
+        SERVICE_URL="/socket.io"
+        SOCKETIO="-e LB_ALGORITHM=source"
+    else
+        SERVICE_URL="/api/$SERVICE"
+        SOCKETIO=""
+    fi
 fi
 
 ID=$(docker run -d --restart always -P \
@@ -80,6 +87,7 @@ ID=$(docker run -d --restart always -P \
     -e LB=http://$HOST_IP_ADDRESS \
     -e SECRET_KEY=$SECRET_KEY \
     -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+    $SOCKETIO \
     $DATABASE \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -l app=microflack \

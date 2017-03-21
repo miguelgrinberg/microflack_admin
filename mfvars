@@ -10,7 +10,7 @@ export PIP_FIND_LINKS=$WHEELHOUSE
 export PACKAGES="common"
 
 # microservices in this application
-export SERVICES="ui users tokens messages"
+export SERVICES="ui users tokens messages socketio"
 
 # services that use a database
 export SERVICES_WITH_DB="users messages"
