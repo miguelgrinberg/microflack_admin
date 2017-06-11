@@ -12,7 +12,12 @@ if [[ "$SERVICE" == "all" ]]; then
 
     # cleanup the service registry as well
     for SERVICE in $SERVICES; do
-        curl -X DELETE $ETCD/v2/keys/services/$SERVICE?recursive=true >/dev/null 2>&1
+        if [[ "$LOAD_BALANCER" == "traefik" ]]; then
+            curl -X DELETE $ETCD/v2/keys/traefik/backends/${SERVICE}-backend?recursive=true >/dev/null 2>&1
+            curl -X DELETE $ETCD/v2/keys/traefik/frontends/${SERVICE}-frontend?recursive=true >/dev/null 2>&1
+        else
+            curl -X DELETE $ETCD/v2/keys/services/$SERVICE?recursive=true >/dev/null 2>&1
+        fi
     done
 else
     echo Killing $SERVICE...

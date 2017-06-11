@@ -41,7 +41,15 @@ export REDIS=$HOST_IP_ADDRESS:6379
 echo export REDIS=$REDIS >> ~/.profile
 
 # deploy load balancer
-docker run --name lb -d --restart always -p 80:80 -e ETCD_PEERS=$ETCD -e HAPROXY_STATS=1 miguelgrinberg/easy-lb-haproxy:latest
+if [[ "$LOAD_BALANCER" == "traefik" ]]; then
+    # use the traefik load balancer
+    echo export LOAD_BALANCER=traefik >> ~/.profile
+    docker run --name lb -d --restart always -p 80:80 -p 8080:8080 traefik:1.3 --etcd --etcd.endpoint="$HOST_IP_ADDRESS:2379" --web --web.address=":8080"
+else
+    # use the haproxy load balancer (recommended)
+    echo export LOAD_BALANCER=haproxy >> ~/.profile
+    docker run --name lb -d --restart always -p 80:80 -e ETCD_PEERS=$ETCD -e HAPROXY_STATS=1 miguelgrinberg/easy-lb-haproxy:latest
+fi
 
 # download the code and build containers
 git clone $GITROOT/microflack_admin

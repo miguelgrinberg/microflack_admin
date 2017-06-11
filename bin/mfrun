@@ -82,6 +82,7 @@ ID=$(docker run -d --restart always -P \
     -e HOST_IP_ADDRESS=$HOST_IP_ADDRESS \
     -e ETCD=$ETCD \
     -e REDIS=$REDIS \
+    -e LOAD_BALANCER=$LOAD_BALANCER \
     -e SERVICE_NAME=$SERVICE \
     -e SERVICE_URL=$SERVICE_URL \
     -e LB=http://$HOST_IP_ADDRESS \

@@ -41,13 +41,22 @@ fi
 
 if [[ "$CMD" == "start" ]]; then
     # register the local service with maximum weight so that it gets most of the traffic
-    curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/upstream/dev -d value="$HOST:$PORT weight 256" >/dev/null 2>&1
-    if [[ "$?" == "0" ]] && [[ "$SERVICE_PATH" != "" ]]; then
-        curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/location -d value="$SERVICE_PATH" >/dev/null 2>&1
+    if [[ "$LOAD_BALANCER" == "traefik" ]]; then
+        curl -f -L -X PUT $ETCD/v2/keys/traefik/backends/${SERVICE}-backend/servers/dev/url -d value="http://$HOST:$PORT" >/dev/null 2>&1
+        curl -f -L -X PUT $ETCD/v2/keys/traefik/backends/${SERVICE}-backend/servers/dev/weight -d value="1000" >/dev/null 2>&1
+    else
+        curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/upstream/dev -d value="$HOST:$PORT weight 256" >/dev/null 2>&1
+        if [[ "$?" == "0" ]] && [[ "$SERVICE_PATH" != "" ]]; then
+            curl -f -L -X PUT $ETCD/v2/keys/services/$SERVICE/location -d value="$SERVICE_PATH" >/dev/null 2>&1
+        fi
     fi
 else
     # remove the local service registration
-    curl -f -L -X DELETE $ETCD/v2/keys/services/$SERVICE/upstream/dev >/dev/null 2>&1
+    if [[ "$LOAD_BALANCER" == "traefik" ]]; then
+        curl -f -L -X DELETE $ETCD/v2/keys/traefik/backends/${SERVICE}-backend/servers/dev?recursive=true >/dev/null 2>&1
+    else
+        curl -f -L -X DELETE $ETCD/v2/keys/services/$SERVICE/upstream/dev >/dev/null 2>&1
+    fi
 fi
 if [[ "$?" == "0" ]]; then
     echo OK
