@@ -1,1 +1,4 @@
-* text eol=lf
+Vagrantfile text eol=lf
+etc-dump text eol=lf
+*.sh text eol=lf
+mf* text eol=lf
