@@ -17,7 +17,7 @@ echo export JWT_SECRET_KEY=$JWT_SECRET_KEY >> ~/.profile
 echo export PATH=\$PATH:$PWD/microflack_admin/bin >> ~/.profile
 
 # logging
-docker run --name logspout -d -p 1095:80 -v /var/run/docker.sock:/var/run/docker.sock gliderlabs/logspout:latest
+docker run --name logspout -d --restart always -p 1095:80 -v /var/run/docker.sock:/var/run/docker.sock gliderlabs/logspout:latest
 
 # deploy etcd
 docker run --name etcd -d --restart always -p 2379:2379 -p 2380:2380 miguelgrinberg/easy-etcd:latest
