@@ -10,4 +10,4 @@ pip3 install --upgrade pip wheel
 
 # install docker
 curl -fsSL https://get.docker.com/ | sh
-usermod -aG docker ubuntu
+usermod -aG docker vagrant

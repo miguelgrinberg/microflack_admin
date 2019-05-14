@@ -9,7 +9,7 @@ chmod +x /tmp/setup-host.sh /tmp/setup-all-in-one.sh
 /tmp/setup-host.sh
 
 # install microflack (run as user ubuntu)
-exec su -c /tmp/setup-all-in-one.sh -l ubuntu
+exec su -c /tmp/setup-all-in-one.sh -l vagrant
 SCRIPT
 
 Vagrant.configure("2") do |config|
